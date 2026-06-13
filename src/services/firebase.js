@@ -1,9 +1,30 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from 'firebase/auth';
-import firebaseConfig from '../../firebase-applet-config.json';
 
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+// Retrieve global injected configuration from build-time config, or use empty object
+const injectedConfig = typeof __FIREBASE_CONFIG__ !== 'undefined' ? __FIREBASE_CONFIG__ : {};
+
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || injectedConfig.apiKey || '',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || injectedConfig.authDomain || '',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || injectedConfig.projectId || '',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || injectedConfig.storageBucket || '',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || injectedConfig.messagingSenderId || '',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || injectedConfig.appId || '',
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || injectedConfig.measurementId || ''
+};
+
+let app;
+let auth;
+
+try {
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+} catch (error) {
+  console.warn('Firebase initialization delayed or failed. Keys might be unconfigured:', error);
+}
+
+export { auth };
 
 const provider = new GoogleAuthProvider();
 
@@ -11,6 +32,10 @@ let isSigningIn = false;
 let cachedAccessToken = null;
 
 export const initAuth = (onAuthSuccess, onAuthFailure) => {
+  if (!auth) {
+    if (onAuthFailure) onAuthFailure();
+    return () => {};
+  }
   return onAuthStateChanged(auth, async (user) => {
     if (user) {
       if (cachedAccessToken) {
@@ -27,6 +52,9 @@ export const initAuth = (onAuthSuccess, onAuthFailure) => {
 };
 
 export const googleSignIn = async () => {
+  if (!auth) {
+    throw new Error('Firebase Auth is not initialized. Please verify your environment variables for Firebase configuration.');
+  }
   try {
     isSigningIn = true;
     const result = await signInWithPopup(auth, provider);
@@ -51,6 +79,8 @@ export const getAccessToken = async () => {
 };
 
 export const logout = async () => {
-  await auth.signOut();
+  if (auth) {
+    await auth.signOut();
+  }
   cachedAccessToken = null;
 };
