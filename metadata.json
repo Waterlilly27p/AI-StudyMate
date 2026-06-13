@@ -1,0 +1,6 @@
+{
+  "name": "AI StudyMate",
+  "description": "An AI-powered studying platform that explains complex topics, summarizes notes, generates interactive quizzes and flashcards, and supports chatting with notes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

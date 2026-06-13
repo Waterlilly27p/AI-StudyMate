@@ -1,0 +1,301 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Custom Professional Royal Periwinkle & Slate Theme Variables */
+  --color-primary: #5a59d3;
+  --color-primary-hover: #4e4dc5;
+  --color-accent: #8b5cf6;
+}
+
+/* Modal and transition search animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.96); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.12s ease-out forwards;
+}
+
+.animate-scale-up {
+  animation: scaleUp 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Base body reset with soft styling and active scrolling properties */
+body {
+  font-family: var(--font-sans);
+  background-color: #f5f6fa;
+  color: #1a1e2d;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom interactive card properties */
+.study-card {
+  background-color: #ffffff;
+  border-radius: 1.25rem;
+  border: 1px solid #eef1f6;
+  box-shadow: 0 4px 20px -2px rgba(148, 163, 184, 0.08), 0 2px 8px -1px rgba(148, 163, 184, 0.04);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.study-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px -4px rgba(148, 163, 184, 0.16), 0 4px 12px -2px rgba(148, 163, 184, 0.08);
+  border-color: #e2e8f0;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Responsive overrides for horizontal orientations (landscape screen heights < 540px) */
+@media (max-height: 540px) {
+  /* Shrink main navbar height to save heavy vertical space */
+  header.main-navbar {
+    height: 3.5rem !important; /* 56px instead of 80px */
+  }
+
+  /* Shrink text sizing and line heights for compact header alignment */
+  header.main-navbar h1 {
+    font-size: 1rem !important;
+  }
+  header.main-navbar p {
+    display: none !important; /* Hide subtitle to clean up clutter */
+  }
+
+  /* Make bottom mobile navigation slimmer */
+  nav.app-bottom-nav {
+    height: 3.5rem !important; /* 56px instead of 64px */
+  }
+
+  /* Make item icons and text tighter */
+  nav.app-bottom-nav a {
+    padding-top: 0.125rem !important;
+    padding-bottom: 0.125rem !important;
+  }
+  nav.app-bottom-nav a svg {
+    width: 1rem !important;
+    height: 1rem !important;
+    margin-bottom: 0px !important;
+  }
+  nav.app-bottom-nav a span {
+    font-size: 9px !important;
+  }
+
+  /* Reduce content offset padding to match compact bottom navigation bar */
+  .app-viewport-container {
+    padding-bottom: 3.5rem !important; /* 56px */
+  }
+}
+
+/* ==========================================================
+   HIGH-CONTRAST CHIC DARK MODE (LATE-NIGHT HIGH-CONTRAST SLATE)
+   ========================================================== */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body,
+html.dark .app-viewport-container {
+  background-color: #1C1E2D !important; /* Base violet/navy */
+  color: #FFFFFF !important;
+}
+
+/* Base override */
+html.dark .bg-slate-50,
+html.dark header.main-navbar,
+html.dark nav.app-bottom-nav,
+html.dark aside {
+  background-color: #1C1E2D !important;
+  border-color: #25283A !important;
+}
+
+/* Cards & Elevated Content */
+html.dark .bg-white,
+html.dark .study-card,
+html.dark .bg-white\/80 {
+  background-color: #25283A !important;
+  border-color: #31354F !important;
+  color: #FFFFFF !important;
+}
+
+/* Standard grey or light background blocks become elegant dark-slate blocks */
+html.dark .bg-slate-100\/50,
+html.dark .bg-slate-100\/80,
+html.dark .bg-slate-100,
+html.dark .bg-slate-100\/30,
+html.dark .bg-slate-200\/50,
+html.dark .bg-slate-50\/50,
+html.dark .bg-slate-50\/60,
+html.dark .bg-indigo-50,
+html.dark .bg-teal-50,
+html.dark .bg-purple-50,
+html.dark .bg-orange-50,
+html.dark .bg-emerald-50,
+html.dark .bg-amber-50,
+html.dark .bg-pink-50,
+html.dark .bg-red-50,
+html.dark .bg-rose-50,
+html.dark .bg-blue-50,
+html.dark .bg-indigo-100\/50 {
+  background-color: #242635 !important; /* Unified dark-slate base nested background */
+  border-color: #2e3146 !important;
+}
+
+/* Standardized high-contrast border rules for widgets and lists */
+html.dark .border-slate-100,
+html.dark .border-slate-200,
+html.dark .border-slate-300,
+html.dark .border-slate-250,
+html.dark .border-indigo-100,
+html.dark .border-indigo-150,
+html.dark .border-indigo-200,
+html.dark .border-purple-100,
+html.dark .border-purple-150,
+html.dark .border-purple-200,
+html.dark .border-orange-100,
+html.dark .border-orange-150,
+html.dark .border-orange-200,
+html.dark .border-amber-100,
+html.dark .border-amber-150,
+html.dark .border-amber-200,
+html.dark .border-emerald-100,
+html.dark .border-emerald-150,
+html.dark .border-emerald-200,
+html.dark .border-slate-200\/40,
+html.dark .border-slate-200\/50,
+html.dark .border-purple-200\/60,
+html.dark .border-orange-200\/60,
+html.dark .border-indigo-200\/60,
+html.dark .divide-slate-200 > *,
+html.dark .divide-slate-100 > * {
+  border-color: #242635 !important;
+}
+
+/* Headings Contrast - Pure High-Contrast White */
+html.dark h1,
+html.dark h2,
+html.dark h3,
+html.dark h4,
+html.dark .text-slate-800,
+html.dark .text-slate-850,
+html.dark .text-slate-900,
+html.dark .text-slate-950,
+html.dark .text-indigo-900,
+html.dark .text-indigo-950,
+html.dark .text-\[\#111827\] {
+  color: #ffffff !important;
+}
+
+/* Inputs, textual boxes, dropdowns */
+html.dark input, 
+html.dark textarea, 
+html.dark select {
+  background-color: #1C1E2D !important;
+  color: #FFFFFF !important;
+  border-color: #25283A !important;
+}
+
+html.dark input:focus, 
+html.dark textarea:focus, 
+html.dark select:focus {
+  border-color: #5a59d3 !important;
+  box-shadow: 0 0 0 2px rgba(90, 89, 211, 0.25) !important;
+}
+
+html.dark input::placeholder, 
+html.dark textarea::placeholder {
+  color: #FFFFFF !important;
+  opacity: 0.7;
+}
+
+/* Primary Content Contrast - Pleasant slate/grey high readability */
+html.dark p,
+html.dark .text-slate-700,
+html.dark .text-slate-650,
+html.dark label {
+  color: #FFFFFF !important; 
+}
+
+/* Secondary Descriptive elements (e.g. subheadings, logs, footnotes) */
+html.dark .text-slate-600,
+html.dark .text-slate-500,
+html.dark .text-slate-400,
+html.dark .text-slate-350,
+html.dark .text-slate-450 {
+  color: #FFFFFF !important; 
+}
+
+/* Removed unified colors to allow Tailwind native distinct colors for logos/text */
+
+/* High contrast layout elements on hover */
+html.dark .hover\:bg-slate-50:hover,
+html.dark .hover\:bg-slate-100:hover,
+html.dark .hover\:bg-slate-200:hover {
+  background-color: #242635 !important;
+}
+
+/* Custom interactive buttons - retain active accent fill rules */
+html.dark .bg-indigo-600,
+html.dark .bg-teal-600 {
+  background-color: #5a59d3 !important;
+  color: #ffffff !important;
+}
+html.dark .bg-indigo-600:hover,
+html.dark .bg-teal-600:hover {
+  background-color: #4e4dc5 !important;
+}
+
+/* Soft inline elements or blockquotes inside explainer results */
+html.dark blockquote {
+  background-color: #242635 !important;
+  color: #e2e8f0 !important;
+  border-left-color: #5a59d3 !important;
+}
+
+html.dark code {
+  background-color: #242635 !important;
+  color: #8f8ff5 !important;
+  border-color: #2e3146 !important;
+}
+
+/* Interactive buttons with default slate style */
+html.dark .bg-indigo-50:hover,
+html.dark .bg-teal-50:hover,
+html.dark .bg-purple-50:hover,
+html.dark .bg-orange-50:hover,
+html.dark .bg-emerald-50:hover,
+html.dark .bg-amber-50:hover,
+html.dark .bg-pink-50:hover,
+html.dark .bg-red-50:hover,
+html.dark .bg-rose-50:hover,
+html.dark .bg-blue-50:hover {
+  background-color: #242635 !important;
+  color: #ffffff !important;
+}
+

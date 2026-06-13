@@ -1,0 +1,33 @@
+# Compiled outputs & dependencies
+node_modules/
+build/
+dist/
+coverage/
+*.log
+README.md
+
+# Environment variables & secrets
+.env*
+!.env.example
+
+# Local database files
+data/db.json
+data/*.json
+
+# Firebase dev artifacts
+.firebase/
+.firebaserc
+firebase-applet-config.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDEs & Editor configurations
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
