@@ -17,6 +17,7 @@ data/*.json
 # Firebase dev artifacts
 .firebase/
 .firebaserc
+firebase-applet-config.json
 
 
 # OS files
