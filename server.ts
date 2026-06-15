@@ -4,6 +4,9 @@ import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Type } from '@google/genai';
 import { YoutubeTranscript } from 'youtube-transcript';
+// @ts-ignore
+import pdf from 'pdf-parse';
+import mammoth from 'mammoth';
 import { readDb, writeDb, hashPassword, generateId, logActivity } from './src/db/localDb.js';
 import { DatabaseSchema, User, Note, Quiz, QuizAttempt, FlashcardSet, ChatSession, ChatMessage } from './src/types.js';
 
@@ -723,28 +726,31 @@ app.post('/api/summarize', authenticateToken, async (req: AuthenticatedRequest, 
     return;
   }
 
-  let prompt = '';
-  let parts: any[] = [];
+  let extractedText = '';
   const isDoc = isGeminiNativeDoc(fileType);
 
-  if (isDoc && base64Content) {
-    // If it's a natively supported document format, use Gemini's native document understanding capability
-    parts = [
-      {
-        inlineData: {
-          mimeType: fileType,
-          data: base64Content
-        }
-      },
-      {
-        text: "Please synthesize and summarize this study book/notes document."
+  if (base64Content && isDoc) {
+    try {
+      const buffer = Buffer.from(base64Content, 'base64');
+      const mime = fileType.toLowerCase();
+      if (mime === 'application/pdf') {
+        const data = await pdf(buffer);
+        extractedText = data.text || '';
+      } else if (
+        mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || 
+        mime === 'application/msword' ||
+        filename.toLowerCase().endsWith('.docx')
+      ) {
+        const result = await mammoth.extractRawText({ buffer });
+        extractedText = result.value || '';
       }
-    ];
-  } else {
-    // If it's a TXT/plain text document content
-    const textToSummarize = rawText || Buffer.from(base64Content || '', 'base64').toString('utf8');
-    prompt = `Please synthesize and summarize these study notes: \n\n${textToSummarize}`;
+    } catch (err) {
+      console.error('Error extracting text from document:', err);
+    }
   }
+
+  const textToSummarize = extractedText || rawText || (base64Content ? Buffer.from(base64Content, 'base64').toString('utf8') : '');
+  const prompt = `Please synthesize and summarize these study notes: \n\n${textToSummarize}`;
 
   const systemInstruction = `You are a professional research synthesiser. Generate a highly structured summary of the notes provided.
 Return the result strictly as a valid JSON object matching the requested schema.
@@ -783,10 +789,9 @@ CRITICAL: To ensure the output is valid JSON, you must properly escape any doubl
   };
 
   try {
-    const aiInput = parts.length > 0 ? parts : prompt;
     const responseText = await callGemini(
       systemInstruction, 
-      aiInput, 
+      prompt, 
       schema
     );
     const parsedSummary = robustJsonParse(responseText);
@@ -798,7 +803,7 @@ CRITICAL: To ensure the output is valid JSON, you must properly escape any doubl
       userId,
       filename,
       fileType,
-      content: rawText || (!isDoc && base64Content ? Buffer.from(base64Content, 'base64').toString('utf8') : ''),
+      content: textToSummarize,
       base64: isDoc ? base64Content : undefined,
       summary: parsedSummary,
       uploadDate: new Date().toISOString()
@@ -1757,7 +1762,146 @@ function simulateFallback(systemInstruction: string, prompt: string, schema?: an
   // If API Key is missing, the backend runs elegantly without crashing using structured simulated learning agents
   if (schema) {
     if (schema.properties?.shortSummary) {
-      // Notes summary synthesis sim
+      // Clean and extract the input text from the prompt
+      let textToSummarize = "";
+      if (prompt.includes("Please synthesize and summarize these study notes:")) {
+        textToSummarize = prompt.split("Please synthesize and summarize these study notes:")[1] || "";
+      } else {
+        textToSummarize = prompt;
+      }
+      textToSummarize = textToSummarize.trim();
+
+      // Fallback builder
+      const cleanText = textToSummarize.trim();
+      if (cleanText.length > 30) {
+        const sentences = cleanText
+          .split(/[.!?\n]+/)
+          .map(s => s.trim().replace(/\s+/g, ' '))
+          .filter(s => s.length > 8);
+
+        const paragraphs = cleanText
+          .split(/\n\s*\n+/)
+          .map(p => p.trim())
+          .filter(p => p.length > 15);
+
+        // Build short summary
+        let shortSummary = "A customized study summary of the uploaded document, focusing on core concepts and main principles.";
+        if (sentences.length > 0) {
+          const mainSentences = sentences.slice(0, Math.min(3, sentences.length));
+          shortSummary = mainSentences.join('. ') + '.';
+          if (shortSummary.length > 250) {
+            shortSummary = shortSummary.substring(0, 247) + '...';
+          }
+        }
+
+        // Build detailed summary
+        let detailedSummary = "This document addresses introductory themes, concepts, and structures. It details several key elements, establishing logical sequencing and workflow steps to aid memory consolidation, revision practices, and effective understanding.";
+        if (paragraphs.length > 1) {
+          detailedSummary = paragraphs.slice(0, Math.min(4, paragraphs.length)).join('\n\n');
+        } else if (sentences.length > 3) {
+          const detailedSentences = sentences.slice(0, Math.min(8, sentences.length));
+          detailedSummary = detailedSentences.slice(0, 4).join('. ') + '.\n\n' + detailedSentences.slice(4).join('. ') + '.';
+        }
+        if (detailedSummary.length > 1000) {
+          detailedSummary = detailedSummary.substring(0, 997) + '...';
+        }
+
+        // Build key points
+        let keyPoints = [
+          "Core lessons and main findings are structured for effective comprehension.",
+          "The material demonstrates specific sequential relationships and frameworks.",
+          "Key themes were synthesized directly from the document's vocabulary.",
+          "Active recall practices based on this data will maximize student retention."
+        ];
+        if (sentences.length > 4) {
+          const potentialPoints: string[] = [];
+          for (const sentence of sentences) {
+            const lower = sentence.toLowerCase();
+            if (
+              lower.includes('important') || 
+              lower.includes('key') || 
+              lower.includes('must') || 
+              lower.includes('concept') ||
+              lower.includes('process') ||
+              lower.includes('system')
+            ) {
+              if (!potentialPoints.includes(sentence) && sentence.length < 150 && sentence.length > 15) {
+                potentialPoints.push(sentence + '.');
+              }
+            }
+            if (potentialPoints.length >= 4) break;
+          }
+          if (potentialPoints.length < 4) {
+            const step = Math.max(1, Math.floor(sentences.length / 4));
+            for (let i = 0; i < 4; i++) {
+              const sentenceIdx = Math.min((i + 1) * step, sentences.length - 1);
+              const sentence = sentences[sentenceIdx];
+              if (sentence && !potentialPoints.includes(sentence) && sentence.length < 150 && sentence.length > 15) {
+                potentialPoints.push(sentence + '.');
+              }
+            }
+          }
+          if (potentialPoints.length >= 2) {
+            keyPoints = potentialPoints;
+          }
+        }
+
+        // Build definitions
+        let importantDefinitions = [
+          { term: "Subject Principle", definition: "The central concept or framework discussed in detail throughout the notes." },
+          { term: "Key Process", definition: "A sequence of actions or operations defined to achieve project or study goals." }
+        ];
+        const potentialDefs: Array<{ term: string; definition: string }> = [];
+        const defPattern = /([^.:\n]{3,25})\s*(?:is defined as|is|means|refers to|:)\s*([^.\n]{10,120})/i;
+        
+        for (const line of cleanText.split('\n')) {
+          const match = line.match(defPattern);
+          if (match) {
+            const term = match[1].trim();
+            const definition = match[2].trim();
+            const capitalizedTerm = term.charAt(0).toUpperCase() + term.slice(1);
+            const capitalizedDef = definition.charAt(0).toUpperCase() + definition.slice(1) + '.';
+            if (capitalizedTerm.length >= 3 && capitalizedTerm.length <= 30 && capitalizedDef.length > 15) {
+              if (!potentialDefs.some(d => d.term.toLowerCase() === capitalizedTerm.toLowerCase())) {
+                potentialDefs.push({ term: capitalizedTerm, definition: capitalizedDef });
+              }
+            }
+          }
+          if (potentialDefs.length >= 3) break;
+        }
+
+        if (potentialDefs.length < 3 && sentences.length > 2) {
+          const capWordPattern = /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b/;
+          for (const sentence of sentences) {
+            const match = sentence.match(capWordPattern);
+            if (match && sentence.length > 40) {
+              const term = match[1];
+              if (term.length > 3 && term.length < 25 && term !== 'Please' && term !== 'This' && term !== 'The') {
+                if (!potentialDefs.some(d => d.term.toLowerCase() === term.toLowerCase())) {
+                  potentialDefs.push({
+                    term: term,
+                    definition: sentence.substring(0, 1).toUpperCase() + sentence.substring(1) + '.'
+                  });
+                }
+              }
+            }
+            if (potentialDefs.length >= 3) break;
+          }
+        }
+
+        if (potentialDefs.length >= 1) {
+          importantDefinitions = potentialDefs;
+        }
+
+        return JSON.stringify({
+          shortSummary,
+          detailedSummary,
+          keyPoints,
+          importantDefinitions
+        });
+      }
+
+      // Default notes summary synthesis fallback if text too short
       return JSON.stringify({
         shortSummary: "A highly succinct summary of the uploaded document, focusing on foundational principles, structured learning paradigms, and core study concepts.",
         detailedSummary: "This set of study notes details paramount methodologies. It spans multiple core components starting from fundamental concepts and terms before branching out into advanced practical execution models, edge cases, and real-world analytical case studies. Essential workflows are diagrammed alongside custom mnemonics to boost retention during revision.",
